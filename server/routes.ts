@@ -90,8 +90,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cart routes
   app.get("/api/cart", async (req, res) => {
     try {
-      // For now, we'll use a dummy user ID until auth is implemented
-      const userId = 1;
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Please login to access your cart" });
+      }
+
+      const userId = req.user!.id;
       let cart = await storage.getCart(userId);
 
       if (!cart) {
@@ -99,7 +102,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const items = await storage.getCartItems(cart.id);
-      res.json({ cart, items });
+      const itemsWithProducts = await Promise.all(
+        items.map(async (item) => {
+          const product = await storage.getProduct(item.productId);
+          return {
+            ...item,
+            product,
+          };
+        })
+      );
+
+      res.json({ cart, items: itemsWithProducts });
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch cart" });
     }
@@ -107,8 +120,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/cart/items", async (req, res) => {
     try {
-      // For now, we'll use a dummy user ID until auth is implemented
-      const userId = 1;
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Please login to add items to cart" });
+      }
+
+      const userId = req.user!.id;
       let cart = await storage.getCart(userId);
 
       if (!cart) {
@@ -121,7 +137,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const cartItem = await storage.addCartItem(validatedItem);
-      res.status(201).json(cartItem);
+      const product = await storage.getProduct(cartItem.productId);
+
+      res.status(201).json({ ...cartItem, product });
     } catch (error) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: fromZodError(error).message });

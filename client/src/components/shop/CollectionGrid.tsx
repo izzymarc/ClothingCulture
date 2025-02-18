@@ -3,55 +3,93 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 const products = [
   {
     id: 1,
     name: "Silk Blend Dress",
-    price: "$289",
+    price: 289,
     image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?auto=format&fit=crop&q=80"
   },
   {
     id: 2,
     name: "Tailored Blazer",
-    price: "$349",
+    price: 349,
     image: "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&q=80"
   },
   {
     id: 3,
     name: "Pleated Skirt",
-    price: "$189",
+    price: 189,
     image: "https://images.unsplash.com/photo-1479064555552-3ef4979f8908?auto=format&fit=crop&q=80"
   },
   {
     id: 4,
     name: "Cashmere Sweater",
-    price: "$259",
+    price: 259,
     image: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&q=80"
   },
   {
     id: 5,
     name: "Wide Leg Pants",
-    price: "$219",
+    price: 219,
     image: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&q=80"
   },
   {
     id: 6,
     name: "Silk Blouse",
-    price: "$199",
+    price: 199,
     image: "https://images.unsplash.com/photo-1467043198406-dc953a3defa0?auto=format&fit=crop&q=80"
   }
 ];
 
 export default function CollectionGrid() {
   const { toast } = useToast();
+  const [, navigate] = useLocation();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const handleAddToCart = (productId: number, productName: string) => {
-    // TODO: Implement actual cart functionality
-    toast({
-      title: "Added to Cart",
-      description: `${productName} has been added to your cart.`,
-    });
+  const addToCartMutation = useMutation({
+    mutationFn: async (productId: number) => {
+      const response = await apiRequest("POST", "/api/cart/items", {
+        productId,
+        quantity: 1,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+    },
+  });
+
+  const handleAddToCart = async (productId: number, productName: string) => {
+    if (!user) {
+      toast({
+        title: "Please login",
+        description: "You need to login to add items to your cart",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    try {
+      await addToCartMutation.mutateAsync(productId);
+      toast({
+        title: "Added to Cart",
+        description: `${productName} has been added to your cart.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add item to cart. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -78,13 +116,14 @@ export default function CollectionGrid() {
               <div className="p-6">
                 <h3 className="text-lg font-medium mb-2">{product.name}</h3>
                 <div className="flex items-center justify-between">
-                  <p className="text-muted-foreground">{product.price}</p>
+                  <p className="text-muted-foreground">${product.price}</p>
                   <Button 
                     onClick={() => handleAddToCart(product.id, product.name)}
                     className="bg-primary hover:bg-primary/90"
+                    disabled={addToCartMutation.isPending}
                   >
                     <ShoppingCart className="w-4 h-4 mr-2" />
-                    Add to Cart
+                    {addToCartMutation.isPending ? "Adding..." : "Add to Cart"}
                   </Button>
                 </div>
               </div>
