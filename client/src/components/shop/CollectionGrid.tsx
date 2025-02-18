@@ -5,47 +5,9 @@ import { ShoppingCart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-
-const products = [
-  {
-    id: 1,
-    name: "Silk Blend Dress",
-    price: 289,
-    image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?auto=format&fit=crop&q=80"
-  },
-  {
-    id: 2,
-    name: "Tailored Blazer",
-    price: 349,
-    image: "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&q=80"
-  },
-  {
-    id: 3,
-    name: "Pleated Skirt",
-    price: 189,
-    image: "https://images.unsplash.com/photo-1479064555552-3ef4979f8908?auto=format&fit=crop&q=80"
-  },
-  {
-    id: 4,
-    name: "Cashmere Sweater",
-    price: 259,
-    image: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&q=80"
-  },
-  {
-    id: 5,
-    name: "Wide Leg Pants",
-    price: 219,
-    image: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&q=80"
-  },
-  {
-    id: 6,
-    name: "Silk Blouse",
-    price: 199,
-    image: "https://images.unsplash.com/photo-1467043198406-dc953a3defa0?auto=format&fit=crop&q=80"
-  }
-];
+import type { Product } from "@shared/schema";
 
 export default function CollectionGrid() {
   const { toast } = useToast();
@@ -53,12 +15,20 @@ export default function CollectionGrid() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  const { data: products = [], isLoading } = useQuery<Product[]>({
+    queryKey: ["/api/products"],
+  });
+
   const addToCartMutation = useMutation({
     mutationFn: async (productId: number) => {
       const response = await apiRequest("POST", "/api/cart/items", {
         productId,
         quantity: 1,
       });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to add item to cart");
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -86,11 +56,25 @@ export default function CollectionGrid() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to add item to cart. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to add item to cart",
         variant: "destructive",
       });
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="animate-pulse">
+            <div className="aspect-[3/4] bg-gray-200 rounded-lg mb-4" />
+            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+            <div className="h-4 bg-gray-200 rounded w-1/4" />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
