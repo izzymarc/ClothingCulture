@@ -5,24 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-
-interface CartItem {
-  id: number;
-  quantity: number;
-  product: {
-    id: number;
-    name: string;
-    price: number;
-    image: string;
-  };
-}
+import { useAuth } from "@/hooks/use-auth";
+import type { Cart, CartItem } from "@/lib/types";
 
 export default function Cart() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
-  const { data: cartData, isLoading } = useQuery({
+  const { data: cartData, isLoading } = useQuery<{ cart: Cart; items: CartItem[] }>({
     queryKey: ["/api/cart"],
+    enabled: !!user,
   });
 
   const updateQuantityMutation = useMutation({
@@ -55,6 +48,17 @@ export default function Cart() {
     });
   };
 
+  if (!user) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="text-center">
+          <h1 className="text-4xl font-light mb-6">Shopping Cart</h1>
+          <p className="text-muted-foreground">Please login to view your cart</p>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
@@ -67,7 +71,7 @@ export default function Cart() {
   }
 
   const items = cartData?.items || [];
-  const total = items.reduce((sum: number, item: CartItem) => 
+  const total = items.reduce((sum, item) => 
     sum + (item.product.price * item.quantity), 0);
 
   return (
@@ -86,7 +90,7 @@ export default function Cart() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-4">
-              {items.map((item: CartItem) => (
+              {items.map((item) => (
                 <Card key={item.id}>
                   <CardContent className="p-4">
                     <div className="flex gap-4">
