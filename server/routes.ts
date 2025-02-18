@@ -6,7 +6,8 @@ import {
   insertProductSchema, 
   insertCollectionSchema, 
   insertCategorySchema,
-  insertCartItemSchema
+  insertCartItemSchema,
+  type Product
 } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { z } from "zod";
@@ -114,6 +115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ cart, items: itemsWithProducts });
     } catch (error) {
+      console.error("Cart fetch error:", error);
       res.status(500).json({ message: "Failed to fetch cart" });
     }
   });
@@ -131,16 +133,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cart = await storage.createCart({ userId });
       }
 
+      const product = await storage.getProduct(req.body.productId);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+
       const validatedItem = insertCartItemSchema.parse({
-        ...req.body,
-        cartId: cart.id
+        cartId: cart.id,
+        productId: req.body.productId,
+        quantity: req.body.quantity || 1
       });
 
       const cartItem = await storage.addCartItem(validatedItem);
-      const product = await storage.getProduct(cartItem.productId);
-
       res.status(201).json({ ...cartItem, product });
     } catch (error) {
+      console.error("Add to cart error:", error);
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: fromZodError(error).message });
       } else {
