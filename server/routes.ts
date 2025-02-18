@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { setupAuth } from "./auth";
 import { 
   insertProductSchema, 
   insertCollectionSchema, 
@@ -11,6 +12,9 @@ import { fromZodError } from "zod-validation-error";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up authentication routes and middleware
+  setupAuth(app);
+
   // Collections routes
   app.get("/api/collections", async (_req, res) => {
     try {

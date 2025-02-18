@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, ShoppingCart } from "lucide-react";
+import { Menu, X, ShoppingCart, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
 
 const navigation = [
   { name: "Home", href: "/" },
@@ -16,6 +17,7 @@ const navigation = [
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [location] = useLocation();
+  const { user, logoutMutation } = useAuth();
 
   const { data: cartData } = useQuery({
     queryKey: ["/api/cart"],
@@ -49,8 +51,8 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Cart Icon */}
-          <div className="flex items-center">
+          {/* Cart and Auth */}
+          <div className="flex items-center space-x-4">
             <Link href="/cart">
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingCart className="h-5 w-5" />
@@ -62,8 +64,27 @@ export default function Navbar() {
               </Button>
             </Link>
 
+            {user ? (
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon">
+                  <User className="h-5 w-5" />
+                </Button>
+                <Button 
+                  variant="ghost"
+                  onClick={() => logoutMutation.mutate()}
+                  disabled={logoutMutation.isPending}
+                >
+                  {logoutMutation.isPending ? "Logging out..." : "Logout"}
+                </Button>
+              </div>
+            ) : (
+              <Link href="/auth">
+                <Button variant="default">Login</Button>
+              </Link>
+            )}
+
             {/* Mobile menu button */}
-            <div className="flex md:hidden ml-2">
+            <div className="flex md:hidden">
               <Button
                 variant="ghost"
                 size="icon"
