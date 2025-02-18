@@ -1,8 +1,14 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertProductSchema, insertCollectionSchema, insertCategorySchema } from "@shared/schema";
+import { 
+  insertProductSchema, 
+  insertCollectionSchema, 
+  insertCategorySchema,
+  insertCartItemSchema
+} from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
+import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Collections routes
@@ -77,6 +83,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cart routes
+  app.get("/api/cart", async (req, res) => {
+    try {
+      // For now, we'll use a dummy user ID until auth is implemented
+      const userId = 1;
+      let cart = await storage.getCart(userId);
+
+      if (!cart) {
+        cart = await storage.createCart({ userId });
+      }
+
+      const items = await storage.getCartItems(cart.id);
+      res.json({ cart, items });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch cart" });
+    }
+  });
+
+  app.post("/api/cart/items", async (req, res) => {
+    try {
+      // For now, we'll use a dummy user ID until auth is implemented
+      const userId = 1;
+      let cart = await storage.getCart(userId);
+
+      if (!cart) {
+        cart = await storage.createCart({ userId });
+      }
+
+      const validatedItem = insertCartItemSchema.parse({
+        ...req.body,
+        cartId: cart.id
+      });
+
+      const cartItem = await storage.addCartItem(validatedItem);
+      res.status(201).json(cartItem);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: fromZodError(error).message });
+      } else {
+        res.status(500).json({ message: "Failed to add item to cart" });
+      }
+    }
+  });
+
+  app.patch("/api/cart/items/:id", async (req, res) => {
+    try {
+      const quantity = z.number().min(1).parse(req.body.quantity);
+      const cartItem = await storage.updateCartItemQuantity(
+        Number(req.params.id),
+        quantity
+      );
+      res.json(cartItem);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: fromZodError(error).message });
+      } else {
+        res.status(500).json({ message: "Failed to update cart item" });
+      }
+    }
+  });
+
+  app.delete("/api/cart/items/:id", async (req, res) => {
+    try {
+      await storage.removeCartItem(Number(req.params.id));
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to remove cart item" });
+    }
+  });
+
   // Admin routes for creating new items
   app.post("/api/products", async (req, res) => {
     try {
@@ -84,7 +160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const product = await storage.createProduct(validatedProduct);
       res.status(201).json(product);
     } catch (error) {
-      if (error instanceof Error) {
+      if (error instanceof z.ZodError) {
         res.status(400).json({ message: fromZodError(error).message });
       } else {
         res.status(500).json({ message: "Failed to create product" });
@@ -98,7 +174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const collection = await storage.createCollection(validatedCollection);
       res.status(201).json(collection);
     } catch (error) {
-      if (error instanceof Error) {
+      if (error instanceof z.ZodError) {
         res.status(400).json({ message: fromZodError(error).message });
       } else {
         res.status(500).json({ message: "Failed to create collection" });
@@ -112,7 +188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const category = await storage.createCategory(validatedCategory);
       res.status(201).json(category);
     } catch (error) {
-      if (error instanceof Error) {
+      if (error instanceof z.ZodError) {
         res.status(400).json({ message: fromZodError(error).message });
       } else {
         res.status(500).json({ message: "Failed to create category" });

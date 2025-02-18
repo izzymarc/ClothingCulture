@@ -43,6 +43,21 @@ export const products = pgTable("products", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Cart tables
+export const carts = pgTable("carts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const cartItems = pgTable("cart_items", {
+  id: serial("id").primaryKey(),
+  cartId: integer("cart_id").references(() => carts.id).notNull(),
+  productId: integer("product_id").references(() => products.id).notNull(),
+  quantity: integer("quantity").notNull().default(1),
+});
+
 // Relations
 export const collectionsRelations = relations(collections, ({ many }) => ({
   products: many(products),
@@ -63,6 +78,25 @@ export const productsRelations = relations(products, ({ one }) => ({
   }),
 }));
 
+export const cartsRelations = relations(carts, ({ one, many }) => ({
+  user: one(users, {
+    fields: [carts.userId],
+    references: [users.id],
+  }),
+  items: many(cartItems),
+}));
+
+export const cartItemsRelations = relations(cartItems, ({ one }) => ({
+  cart: one(carts, {
+    fields: [cartItems.cartId],
+    references: [carts.id],
+  }),
+  product: one(products, {
+    fields: [cartItems.productId],
+    references: [products.id],
+  }),
+}));
+
 // Insert Schemas
 export const insertCollectionSchema = createInsertSchema(collections)
   .omit({ id: true, createdAt: true });
@@ -73,6 +107,12 @@ export const insertCategorySchema = createInsertSchema(categories)
 export const insertProductSchema = createInsertSchema(products)
   .omit({ id: true, createdAt: true });
 
+export const insertCartSchema = createInsertSchema(carts)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+
+export const insertCartItemSchema = createInsertSchema(cartItems)
+  .omit({ id: true });
+
 // Types
 export type Collection = typeof collections.$inferSelect;
 export type InsertCollection = z.infer<typeof insertCollectionSchema>;
@@ -82,3 +122,9 @@ export type InsertCategory = z.infer<typeof insertCategorySchema>;
 
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
+
+export type Cart = typeof carts.$inferSelect;
+export type InsertCart = z.infer<typeof insertCartSchema>;
+
+export type CartItem = typeof cartItems.$inferSelect;
+export type InsertCartItem = z.infer<typeof insertCartItemSchema>;

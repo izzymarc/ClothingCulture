@@ -4,12 +4,21 @@ import {
   collections,
   products,
   categories,
+  carts,
+  cartItems,
   type Collection,
   type InsertCollection,
   type Product,
   type InsertProduct,
   type Category,
   type InsertCategory,
+  type Cart,
+  type InsertCart,
+  type CartItem,
+  type InsertCartItem,
+  users,
+  type User,
+  type InsertUser,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -29,9 +38,19 @@ export interface IStorage {
   getCategories(): Promise<Category[]>;
   getCategory(id: number): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
-  getUser(id: number): Promise<import("@shared/schema").User | undefined>;
-  getUserByUsername(username: string): Promise<import("@shared/schema").User | undefined>;
-  createUser(user: import("@shared/schema").InsertUser): Promise<import("@shared/schema").User>;
+
+  // Cart
+  getCart(userId: number): Promise<Cart | undefined>;
+  createCart(cart: InsertCart): Promise<Cart>;
+  getCartItems(cartId: number): Promise<CartItem[]>;
+  addCartItem(cartItem: InsertCartItem): Promise<CartItem>;
+  updateCartItemQuantity(cartItemId: number, quantity: number): Promise<CartItem>;
+  removeCartItem(cartItemId: number): Promise<void>;
+
+  // User operations
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -111,15 +130,78 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return newCategory;
   }
-    async getUser(id: number): Promise<import("@shared/schema").User | undefined> {
-        throw new Error("Method not implemented.");
-    }
-    async getUserByUsername(username: string): Promise<import("@shared/schema").User | undefined> {
-        throw new Error("Method not implemented.");
-    }
-    async createUser(user: import("@shared/schema").InsertUser): Promise<import("@shared/schema").User> {
-        throw new Error("Method not implemented.");
-    }
+
+  // Cart operations
+  async getCart(userId: number): Promise<Cart | undefined> {
+    const [cart] = await db
+      .select()
+      .from(carts)
+      .where(eq(carts.userId, userId));
+    return cart;
+  }
+
+  async createCart(cart: InsertCart): Promise<Cart> {
+    const [newCart] = await db
+      .insert(carts)
+      .values(cart)
+      .returning();
+    return newCart;
+  }
+
+  async getCartItems(cartId: number): Promise<CartItem[]> {
+    return await db
+      .select()
+      .from(cartItems)
+      .where(eq(cartItems.cartId, cartId));
+  }
+
+  async addCartItem(cartItem: InsertCartItem): Promise<CartItem> {
+    const [newItem] = await db
+      .insert(cartItems)
+      .values(cartItem)
+      .returning();
+    return newItem;
+  }
+
+  async updateCartItemQuantity(cartItemId: number, quantity: number): Promise<CartItem> {
+    const [updatedItem] = await db
+      .update(cartItems)
+      .set({ quantity })
+      .where(eq(cartItems.id, cartItemId))
+      .returning();
+    return updatedItem;
+  }
+
+  async removeCartItem(cartItemId: number): Promise<void> {
+    await db
+      .delete(cartItems)
+      .where(eq(cartItems.id, cartItemId));
+  }
+
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const [newUser] = await db
+      .insert(users)
+      .values(user)
+      .returning();
+    return newUser;
+  }
 }
 
 export const storage = new DatabaseStorage();
