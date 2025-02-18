@@ -7,6 +7,7 @@ import Footer from "@/components/layout/Footer";
 import Home from "@/pages/Home";
 import About from "@/pages/About";
 import Shop from "@/pages/Shop";
+import Cart from "@/pages/Cart";
 import Lookbook from "@/pages/Lookbook";
 import Contact from "@/pages/Contact";
 import NotFound from "@/pages/not-found";
@@ -20,6 +21,7 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/about" component={About} />
           <Route path="/shop" component={Shop} />
+          <Route path="/cart" component={Cart} />
           <Route path="/lookbook" component={Lookbook} />
           <Route path="/contact" component={Contact} />
           <Route component={NotFound} />

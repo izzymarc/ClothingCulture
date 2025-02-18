@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 
 const navigation = [
   { name: "Home", href: "/" },
@@ -16,6 +17,12 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [location] = useLocation();
 
+  const { data: cartData } = useQuery({
+    queryKey: ["/api/cart"],
+  });
+
+  const itemCount = cartData?.items?.length || 0;
+
   return (
     <nav className="bg-background/95 backdrop-blur sticky top-0 z-50 border-b">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -25,7 +32,7 @@ export default function Navbar() {
               <span className="text-xl font-semibold">August Culture</span>
             </Link>
           </div>
-          
+
           {/* Desktop nav */}
           <div className="hidden md:flex md:space-x-8">
             {navigation.map((item) => (
@@ -42,15 +49,29 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="flex md:hidden">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsOpen(!isOpen)}
-            >
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </Button>
+          {/* Cart Icon */}
+          <div className="flex items-center">
+            <Link href="/cart">
+              <Button variant="ghost" size="icon" className="relative">
+                <ShoppingCart className="h-5 w-5" />
+                {itemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                    {itemCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
+
+            {/* Mobile menu button */}
+            <div className="flex md:hidden ml-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsOpen(!isOpen)}
+              >
+                {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
