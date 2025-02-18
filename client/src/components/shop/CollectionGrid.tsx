@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ShoppingCart } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const products = [
   {
@@ -42,6 +44,16 @@ const products = [
 ];
 
 export default function CollectionGrid() {
+  const { toast } = useToast();
+
+  const handleAddToCart = (productId: number, productName: string) => {
+    // TODO: Implement actual cart functionality
+    toast({
+      title: "Added to Cart",
+      description: `${productName} has been added to your cart.`,
+    });
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       {products.map((product, index) => (
@@ -51,21 +63,30 @@ export default function CollectionGrid() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.1 }}
         >
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden group">
             <CardContent className="p-0">
-              <div className="aspect-[3/4] relative group">
+              <div className="aspect-[3/4] relative">
                 <img
                   src={product.image}
                   alt={product.name}
                   className="object-cover w-full h-full transition-transform group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                   <Button variant="secondary">View Details</Button>
                 </div>
               </div>
-              <div className="p-4">
-                <h3 className="text-lg font-medium">{product.name}</h3>
-                <p className="text-muted-foreground">{product.price}</p>
+              <div className="p-6">
+                <h3 className="text-lg font-medium mb-2">{product.name}</h3>
+                <div className="flex items-center justify-between">
+                  <p className="text-muted-foreground">{product.price}</p>
+                  <Button 
+                    onClick={() => handleAddToCart(product.id, product.name)}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    Add to Cart
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

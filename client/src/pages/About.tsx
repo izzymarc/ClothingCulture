@@ -18,6 +18,26 @@ export default function About() {
           also feel meaningful to wear.
         </p>
 
+        <div className="mt-20 mb-20">
+          <div className="relative">
+            <img
+              src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80"
+              alt="Joan Zinab Dogo"
+              className="w-48 h-48 rounded-full mx-auto object-cover mb-6"
+            />
+            <h2 className="text-2xl font-light mb-2">Joan Zinab Dogo</h2>
+            <p className="text-muted-foreground mb-6">Founder & CEO</p>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Under the visionary leadership of Joan Zinab Dogo, August Culture has 
+              redefined contemporary fashion. With over a decade of experience in the 
+              fashion industry, Joan's commitment to sustainable practices and timeless 
+              design has shaped our brand's ethos. Her innovative approach combines 
+              traditional craftsmanship with modern aesthetics, creating pieces that 
+              resonate with the sophisticated woman of today.
+            </p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mt-20">
           <div className="text-left">
             <h2 className="text-2xl font-light mb-4">Our Mission</h2>
