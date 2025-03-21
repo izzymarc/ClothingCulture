@@ -1,6 +1,6 @@
 [build]
   command = "cd client && npm install && npm run build"
-  publish = "client/dist"
+  publish = "client/dist/public"
 
 [context.production.environment]
   NODE_VERSION = "18.0.0"
